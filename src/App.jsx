@@ -16,8 +16,12 @@ import {
   Trash2,
   Edit3,
   Plus,
-  MessageSquare
+  MessageSquare,
+  LogIn,
+  LogOut,
+  UserCircle
 } from "lucide-react";
+import { supabase } from "./supabaseClient";
 import "./style.css";
 
 const TOOLS = [
@@ -68,12 +72,44 @@ const CRYPTO_LIST = [
 function App() {
   const [active, setActive] = useState("chat");
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const tool = useMemo(() => TOOLS.find((t) => t.id === active), [active]);
+
+  React.useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user || null);
+      setAuthLoading(false);
+    });
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+      setAuthLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   function chooseTool(id) {
     setActive(id);
     setMobileMenu(false);
+  }
+
+  async function loginWithGoogle() {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+  }
+
+  async function logout() {
+    await supabase.auth.signOut();
+    setUser(null);
   }
 
   return (
@@ -91,6 +127,36 @@ function App() {
           <a href="#workspace">Workspace</a>
           <a href="#features">Fitur</a>
         </nav>
+
+        <div className="authBox">
+          {authLoading ? (
+            <span className="authLoading">Loading...</span>
+          ) : user ? (
+            <div className="userMenu">
+              {user.user_metadata?.avatar_url ? (
+                <img
+                  src={user.user_metadata.avatar_url}
+                  alt="User Avatar"
+                  className="userAvatar"
+                />
+              ) : (
+                <UserCircle size={24} />
+              )}
+
+              <span>{user.user_metadata?.full_name || user.email}</span>
+
+              <button onClick={logout} className="logoutBtn">
+                <LogOut size={16} />
+                Logout
+              </button>
+            </div>
+          ) : (
+            <button onClick={loginWithGoogle} className="loginBtn">
+              <LogIn size={16} />
+              Login Google
+            </button>
+          )}
+        </div>
 
         <button
           className="mobileBtn"
@@ -112,6 +178,20 @@ function App() {
           <a href="#features" onClick={() => setMobileMenu(false)}>
             Fitur
           </a>
+
+          {!authLoading && !user && (
+            <button className="loginBtn" onClick={loginWithGoogle}>
+              <LogIn size={16} />
+              Login Google
+            </button>
+          )}
+
+          {!authLoading && user && (
+            <button className="logoutBtn" onClick={logout}>
+              <LogOut size={16} />
+              Logout
+            </button>
+          )}
         </div>
       )}
 
@@ -132,9 +212,13 @@ function App() {
             <a href="#workspace" className="primaryBtn">
               Mulai Pakai Tools
             </a>
-            <a href="#features" className="secondaryBtn">
-              Lihat Fitur
-            </a>
+
+            {!user && (
+              <button className="secondaryBtn heroLoginBtn" onClick={loginWithGoogle}>
+                <LogIn size={16} />
+                Login Google
+              </button>
+            )}
           </div>
         </div>
 
@@ -157,8 +241,8 @@ function App() {
               <small>Tools aktif</small>
             </div>
             <div>
-              <strong>Fast</strong>
-              <small>Cloudflare Worker</small>
+              <strong>{user ? "Login" : "Guest"}</strong>
+              <small>{user ? "Google aktif" : "Perlu login"}</small>
             </div>
           </div>
         </div>
@@ -216,11 +300,19 @@ function App() {
             </div>
           </div>
 
-          {active === "chat" && <AIChat />}
-          {active === "tempmail" && <TempMail />}
-          {active === "calculator" && <AdvancedCalculator />}
-          {active === "crypto" && <CryptoPrice />}
-          {active === "password" && <PasswordGenerator />}
+          {authLoading ? (
+            <LoadingGate />
+          ) : !user ? (
+            <LoginGate loginWithGoogle={loginWithGoogle} />
+          ) : (
+            <>
+              {active === "chat" && <AIChat />}
+              {active === "tempmail" && <TempMail />}
+              {active === "calculator" && <AdvancedCalculator />}
+              {active === "crypto" && <CryptoPrice />}
+              {active === "password" && <PasswordGenerator />}
+            </>
+          )}
         </section>
       </section>
 
@@ -231,6 +323,41 @@ function App() {
         </p>
       </footer>
     </main>
+  );
+}
+
+function LoadingGate() {
+  return (
+    <div className="loginGate">
+      <div className="loginGateIcon">
+        <Loader2 className="spin" size={44} />
+      </div>
+
+      <h3>Memeriksa login...</h3>
+      <p>Tunggu sebentar, AetherDesk sedang memeriksa sesi akun kamu.</p>
+    </div>
+  );
+}
+
+function LoginGate({ loginWithGoogle }) {
+  return (
+    <div className="loginGate">
+      <div className="loginGateIcon">
+        <UserCircle size={44} />
+      </div>
+
+      <h3>Login dulu untuk memakai AetherDesk</h3>
+
+      <p>
+        Masuk dengan Google agar kamu bisa memakai AI Chat, TempMail,
+        kalkulator, crypto tools, dan password generator.
+      </p>
+
+      <button className="loginBtn big" onClick={loginWithGoogle}>
+        <LogIn size={18} />
+        Login dengan Google
+      </button>
+    </div>
   );
 }
 
