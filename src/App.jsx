@@ -12,7 +12,11 @@ import {
   Calculator,
   Coins,
   KeyRound,
-  Copy
+  Copy,
+  Trash2,
+  Edit3,
+  Plus,
+  MessageSquare
 } from "lucide-react";
 import "./style.css";
 
@@ -21,7 +25,7 @@ const TOOLS = [
     id: "chat",
     name: "AI Chat",
     icon: Bot,
-    description: "Chat AI cepat menggunakan Groq."
+    description: "Chat AI cepat dengan history, rename, hapus chat, dan code block copy."
   },
   {
     id: "tempmail",
@@ -87,31 +91,49 @@ function App() {
           <a href="#features">Fitur</a>
         </nav>
 
-        <button className="mobileBtn" onClick={() => setMobileMenu(!mobileMenu)}>
+        <button
+          className="mobileBtn"
+          onClick={() => setMobileMenu(!mobileMenu)}
+          aria-label="Toggle menu"
+        >
           {mobileMenu ? <X /> : <Menu />}
         </button>
       </header>
 
       {mobileMenu && (
         <div className="mobileNav">
-          <a href="#tools" onClick={() => setMobileMenu(false)}>Tools</a>
-          <a href="#workspace" onClick={() => setMobileMenu(false)}>Workspace</a>
-          <a href="#features" onClick={() => setMobileMenu(false)}>Fitur</a>
+          <a href="#tools" onClick={() => setMobileMenu(false)}>
+            Tools
+          </a>
+          <a href="#workspace" onClick={() => setMobileMenu(false)}>
+            Workspace
+          </a>
+          <a href="#features" onClick={() => setMobileMenu(false)}>
+            Fitur
+          </a>
         </div>
       )}
 
       <section className="hero">
         <div className="heroText">
           <p className="badge">AI Tools + Utility Workspace</p>
-          <h1>AetherDesk, workspace cepat untuk AI, tempmail, kalkulator, crypto, dan tools harian.</h1>
+          <h1>
+            AetherDesk, workspace cepat untuk AI, tempmail, kalkulator, crypto,
+            dan tools harian.
+          </h1>
           <p>
-            Satu dashboard ringan untuk kebutuhan produktivitas harian. Mulai dari AI chat,
-            generator email sementara, kalkulator canggih, cek harga crypto, sampai password generator.
+            Satu dashboard ringan untuk kebutuhan produktivitas harian. Mulai
+            dari AI chat, generator email sementara, kalkulator canggih, cek
+            harga crypto, sampai password generator.
           </p>
 
           <div className="heroActions">
-            <a href="#workspace" className="primaryBtn">Mulai Pakai Tools</a>
-            <a href="#features" className="secondaryBtn">Lihat Fitur</a>
+            <a href="#workspace" className="primaryBtn">
+              Mulai Pakai Tools
+            </a>
+            <a href="#features" className="secondaryBtn">
+              Lihat Fitur
+            </a>
           </div>
         </div>
 
@@ -121,8 +143,13 @@ function App() {
             <span></span>
             <span></span>
           </div>
+
           <h2>Smart Tool Hub</h2>
-          <p>AetherDesk menggabungkan AI dan tools praktis dalam satu tampilan yang responsif untuk HP dan PC.</p>
+          <p>
+            AetherDesk menggabungkan AI dan tools praktis dalam satu tampilan
+            yang responsif untuk HP dan PC.
+          </p>
+
           <div className="miniStats">
             <div>
               <strong>5+</strong>
@@ -142,11 +169,13 @@ function App() {
           <h3>Cepat</h3>
           <p>Frontend ringan dan backend Cloudflare Worker untuk akses cepat.</p>
         </article>
+
         <article>
           <ShieldCheck />
           <h3>Aman</h3>
           <p>API key AI disimpan di Cloudflare Runtime Secret, bukan di browser.</p>
         </article>
+
         <article>
           <Sparkles />
           <h3>Multi Tool</h3>
@@ -195,24 +224,158 @@ function App() {
       </section>
 
       <footer className="footer">
-        <p>© {new Date().getFullYear()} AetherDesk. AI tools and utility workspace.</p>
+        <p>
+          © {new Date().getFullYear()} AetherDesk. AI tools and utility
+          workspace.
+        </p>
       </footer>
     </main>
   );
 }
 
 function AIChat() {
+  const STORAGE_KEY = "aetherdesk_chat_history";
+
+  const createNewChat = () => ({
+    id: crypto.randomUUID(),
+    title: "Chat Baru",
+    messages: [],
+    createdAt: Date.now()
+  });
+
+  const [chats, setChats] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      const parsed = saved ? JSON.parse(saved) : null;
+
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+
+      return [createNewChat()];
+    } catch {
+      return [createNewChat()];
+    }
+  });
+
+  const [activeChatId, setActiveChatId] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      const parsed = saved ? JSON.parse(saved) : null;
+
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed[0].id;
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
+  });
+
   const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function runAI() {
-    if (!input.trim()) return;
+  const activeChat = useMemo(() => {
+    return chats.find((chat) => chat.id === activeChatId) || chats[0];
+  }, [chats, activeChatId]);
 
+  React.useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
+  }, [chats]);
+
+  React.useEffect(() => {
+    if (!activeChatId && chats[0]) {
+      setActiveChatId(chats[0].id);
+    }
+  }, [activeChatId, chats]);
+
+  function updateChat(chatId, updater) {
+    setChats((prev) =>
+      prev.map((chat) => {
+        if (chat.id !== chatId) return chat;
+        return updater(chat);
+      })
+    );
+  }
+
+  function newChat() {
+    const chat = createNewChat();
+    setChats((prev) => [chat, ...prev]);
+    setActiveChatId(chat.id);
+    setInput("");
+  }
+
+  function renameChat(chatId) {
+    const current = chats.find((chat) => chat.id === chatId);
+    const title = prompt("Nama chat baru:", current?.title || "Chat Baru");
+
+    if (!title || !title.trim()) return;
+
+    updateChat(chatId, (chat) => ({
+      ...chat,
+      title: title.trim()
+    }));
+  }
+
+  function deleteChat(chatId) {
+    const yes = confirm("Hapus chat ini?");
+    if (!yes) return;
+
+    setChats((prev) => {
+      const filtered = prev.filter((chat) => chat.id !== chatId);
+
+      if (filtered.length === 0) {
+        const fresh = createNewChat();
+        setActiveChatId(fresh.id);
+        return [fresh];
+      }
+
+      if (activeChatId === chatId) {
+        setActiveChatId(filtered[0].id);
+      }
+
+      return filtered;
+    });
+  }
+
+  async function runAI() {
+    if (!input.trim() || loading || !activeChat) return;
+
+    const userText = input.trim();
+
+    const userMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: userText
+    };
+
+    const aiMessageId = crypto.randomUUID();
+
+    const aiPlaceholder = {
+      id: aiMessageId,
+      role: "assistant",
+      content: "Sedang memproses..."
+    };
+
+    updateChat(activeChat.id, (chat) => ({
+      ...chat,
+      title:
+        chat.messages.length === 0
+          ? userText.slice(0, 32) + (userText.length > 32 ? "..." : "")
+          : chat.title,
+      messages: [...chat.messages, userMessage, aiPlaceholder]
+    }));
+
+    setInput("");
     setLoading(true);
-    setOutput("");
 
     try {
+      const chatContext = activeChat.messages
+        .slice(-8)
+        .map((msg) => `${msg.role === "user" ? "User" : "AI"}: ${msg.content}`)
+        .join("\n\n");
+
       const res = await fetch("/api/ai", {
         method: "POST",
         headers: {
@@ -220,8 +383,8 @@ function AIChat() {
         },
         body: JSON.stringify({
           system:
-            "Kamu adalah AetherDesk AI. Jawab dalam bahasa Indonesia yang jelas, rapi, dan mudah dipahami pemula.",
-          message: input
+            "Kamu adalah AetherDesk AI. Jawab dalam bahasa Indonesia yang jelas, rapi, dan mudah dipahami pemula. Jika memberi kode, selalu gunakan markdown code block dengan tiga backtick agar kode tampil di kotak khusus.",
+          message: `${chatContext}\n\nUser terbaru: ${userText}`
         })
       });
 
@@ -231,48 +394,230 @@ function AIChat() {
         throw new Error(data.error || "Gagal memanggil AI.");
       }
 
-      setOutput(data.text || "Tidak ada jawaban.");
+      updateChat(activeChat.id, (chat) => ({
+        ...chat,
+        messages: chat.messages.map((msg) =>
+          msg.id === aiMessageId
+            ? {
+                ...msg,
+                content: data.text || "Tidak ada jawaban."
+              }
+            : msg
+        )
+      }));
     } catch (err) {
-      setOutput("Error: " + err.message);
+      updateChat(activeChat.id, (chat) => ({
+        ...chat,
+        messages: chat.messages.map((msg) =>
+          msg.id === aiMessageId
+            ? {
+                ...msg,
+                content: "Error: " + err.message
+              }
+            : msg
+        )
+      }));
     } finally {
       setLoading(false);
     }
   }
 
-  return (
-    <>
-      <textarea
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Tanya apa saja ke AI..."
-      />
+  function handleEnter(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      runAI();
+    }
+  }
 
-      <div className="actionRow">
-        <button className="runBtn" onClick={runAI} disabled={loading || !input.trim()}>
-          {loading ? <Loader2 className="spin" size={18} /> : <Bot size={18} />}
-          {loading ? "Memproses..." : "Jalankan AI"}
+  return (
+    <div className="chatGPTLayout">
+      <aside className="chatHistory">
+        <button className="newChatBtn" onClick={newChat}>
+          <Plus size={18} />
+          Chat Baru
         </button>
 
-        <button
-          className="clearBtn"
-          onClick={() => {
-            setInput("");
-            setOutput("");
-          }}
-        >
-          Bersihkan
+        <div className="chatList">
+          {chats.map((chat) => (
+            <div
+              key={chat.id}
+              className={chat.id === activeChat?.id ? "chatItem active" : "chatItem"}
+            >
+              <button
+                className="chatTitleBtn"
+                onClick={() => setActiveChatId(chat.id)}
+              >
+                <MessageSquare size={16} />
+                <span>{chat.title}</span>
+              </button>
+
+              <div className="chatActions">
+                <button onClick={() => renameChat(chat.id)} title="Rename chat">
+                  <Edit3 size={15} />
+                </button>
+
+                <button onClick={() => deleteChat(chat.id)} title="Hapus chat">
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </aside>
+
+      <section className="chatMain">
+        <div className="chatMessages">
+          {!activeChat || activeChat.messages.length === 0 ? (
+            <div className="emptyChat">
+              <Bot size={42} />
+              <h3>Mulai percakapan baru</h3>
+              <p>
+                Tanyakan apa saja. Jawaban kode akan otomatis tampil dalam kotak
+                yang bisa di-scroll dan di-copy.
+              </p>
+            </div>
+          ) : (
+            activeChat.messages.map((msg) => (
+              <ChatMessage key={msg.id} role={msg.role} content={msg.content} />
+            ))
+          )}
+        </div>
+
+        <div className="chatComposer">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleEnter}
+            placeholder="Ketik pesan... Enter untuk kirim, Shift + Enter untuk baris baru"
+          />
+
+          <button className="runBtn" onClick={runAI} disabled={loading || !input.trim()}>
+            {loading ? <Loader2 className="spin" size={18} /> : <Bot size={18} />}
+            {loading ? "Memproses..." : "Kirim"}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ChatMessage({ role, content }) {
+  const parts = parseCodeBlocks(content);
+
+  return (
+    <div className={role === "user" ? "messageRow user" : "messageRow assistant"}>
+      <div className="messageAvatar">{role === "user" ? "U" : <Bot size={17} />}</div>
+
+      <div className="messageBubble">
+        {parts.map((part, index) => {
+          if (part.type === "code") {
+            return (
+              <CodeBlock
+                key={index}
+                language={part.language}
+                code={part.content}
+              />
+            );
+          }
+
+          return (
+            <p key={index} className="messageText">
+              {part.content}
+            </p>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function parseCodeBlocks(text) {
+  const regex = /```(\w+)?\n?([\s\S]*?)```/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      const beforeText = text.slice(lastIndex, match.index).trim();
+
+      if (beforeText) {
+        parts.push({
+          type: "text",
+          content: beforeText
+        });
+      }
+    }
+
+    parts.push({
+      type: "code",
+      language: match[1] || "code",
+      content: match[2].trim()
+    });
+
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    const afterText = text.slice(lastIndex).trim();
+
+    if (afterText) {
+      parts.push({
+        type: "text",
+        content: afterText
+      });
+    }
+  }
+
+  if (parts.length === 0) {
+    return [
+      {
+        type: "text",
+        content: text
+      }
+    ];
+  }
+
+  return parts;
+}
+
+function CodeBlock({ language, code }) {
+  async function copyCode() {
+    try {
+      await navigator.clipboard.writeText(code);
+      alert("Kode berhasil disalin!");
+    } catch {
+      alert("Gagal copy kode.");
+    }
+  }
+
+  return (
+    <div className="codeBlock">
+      <div className="codeHeader">
+        <span>{language}</span>
+
+        <button onClick={copyCode}>
+          <Copy size={15} />
+          Copy
         </button>
       </div>
 
-      <ResultBox title="Hasil AI" value={output || "Output AI akan muncul di sini."} />
-    </>
+      <pre>
+        <code>{code}</code>
+      </pre>
+    </div>
   );
 }
 
 function TempMail() {
   const [email, setEmail] = useState("");
 
-  const domains = ["aethermail.dev", "tempmail.local", "quickmail.app", "maildrop.tools"];
+  const domains = [
+    "aethermail.dev",
+    "tempmail.local",
+    "quickmail.app",
+    "maildrop.tools"
+  ];
 
   function generateEmail() {
     const randomName =
@@ -288,7 +633,8 @@ function TempMail() {
   return (
     <div className="toolBox">
       <p className="hint">
-        Ini generator alamat email sementara. Untuk inbox asli, nanti bisa disambungkan ke API TempMail.
+        Ini generator alamat email sementara. Untuk inbox asli, nanti bisa
+        disambungkan ke API TempMail.
       </p>
 
       <button className="runBtn" onClick={generateEmail}>
@@ -311,7 +657,7 @@ function AdvancedCalculator() {
         .replaceAll("×", "*")
         .replaceAll("÷", "/")
         .replaceAll("^", "**")
-        .replace(/[^0-9+\-*/().%\s**]/g, "");
+        .replace(/[^0-9+\-*/().%\s]/g, "");
 
       if (!safeExpr.trim()) {
         setResult("Masukkan angka atau rumus dulu.");
@@ -341,9 +687,13 @@ function AdvancedCalculator() {
       />
 
       <div className="quickGrid">
-        {["7", "8", "9", "/", "4", "5", "6", "*", "1", "2", "3", "-", "0", ".", "%", "+"].map((v) => (
-          <button key={v} onClick={() => setExpr(expr + v)}>{v}</button>
-        ))}
+        {["7", "8", "9", "/", "4", "5", "6", "*", "1", "2", "3", "-", "0", ".", "%", "+"].map(
+          (v) => (
+            <button key={v} onClick={() => setExpr(expr + v)}>
+              {v}
+            </button>
+          )
+        )}
       </div>
 
       <div className="actionRow">
@@ -363,7 +713,10 @@ function AdvancedCalculator() {
         </button>
       </div>
 
-      <ResultBox title="Hasil Kalkulator" value={result || "Hasil perhitungan akan muncul di sini."} />
+      <ResultBox
+        title="Hasil Kalkulator"
+        value={result || "Hasil perhitungan akan muncul di sini."}
+      />
     </div>
   );
 }
@@ -424,10 +777,12 @@ function CryptoPrice() {
                 <strong>{coin.symbol}</strong>
                 <span>{coin.name}</span>
               </div>
+
               <h3>
                 {currency.toUpperCase()}{" "}
                 {coin.price?.toLocaleString("id-ID") || "-"}
               </h3>
+
               <p className={coin.change >= 0 ? "green" : "red"}>
                 24h: {coin.change?.toFixed(2) || "0.00"}%
               </p>
@@ -458,9 +813,7 @@ function PasswordGenerator() {
 
   return (
     <div className="toolBox">
-      <label className="label">
-        Panjang Password: {length}
-      </label>
+      <label className="label">Panjang Password: {length}</label>
 
       <input
         type="range"
@@ -492,13 +845,19 @@ function ResultBox({ title, value }) {
 function CopyBox({ value }) {
   async function copyValue() {
     if (!value) return;
-    await navigator.clipboard.writeText(value);
-    alert("Berhasil disalin!");
+
+    try {
+      await navigator.clipboard.writeText(value);
+      alert("Berhasil disalin!");
+    } catch {
+      alert("Gagal copy.");
+    }
   }
 
   return (
     <div className="copyBox">
       <pre>{value}</pre>
+
       <button onClick={copyValue}>
         <Copy size={16} />
         Copy
