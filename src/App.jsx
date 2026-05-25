@@ -1,6 +1,18 @@
 import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Bot, Wand2, FileText, Code2, Braces, Loader2 } from "lucide-react";
+import {
+  Bot,
+  Wand2,
+  FileText,
+  Code2,
+  Braces,
+  Loader2,
+  Sparkles,
+  ShieldCheck,
+  Zap,
+  Menu,
+  X
+} from "lucide-react";
 import "./style.css";
 
 const TOOLS = [
@@ -9,7 +21,7 @@ const TOOLS = [
     name: "AI Chat",
     icon: Bot,
     placeholder: "Tanya apa saja...",
-    system: "Kamu adalah asisten AI yang membantu dengan bahasa Indonesia yang jelas dan mudah dipahami."
+    system: "Kamu adalah asisten AI AetherDesk. Jawab dalam bahasa Indonesia yang jelas, rapi, dan mudah dipahami pemula."
   },
   {
     id: "prompt",
@@ -46,22 +58,35 @@ function App() {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
+
   const tool = useMemo(() => TOOLS.find((t) => t.id === active), [active]);
 
   async function runAI() {
     if (!input.trim()) return;
+
     setLoading(true);
     setOutput("");
 
     try {
       const res = await fetch("/api/ai", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tool: active, system: tool.system, message: input })
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          tool: active,
+          system: tool.system,
+          message: input
+        })
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Gagal memanggil API");
+
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal memanggil AI.");
+      }
+
       setOutput(data.text || "Tidak ada jawaban.");
     } catch (err) {
       setOutput("Error: " + err.message);
@@ -70,35 +95,110 @@ function App() {
     }
   }
 
-  function clearAll() {
-    setInput("");
+  function chooseTool(id) {
+    setActive(id);
     setOutput("");
+    setMobileMenu(false);
   }
 
   return (
-    <main className="app">
+    <main>
+      <header className="navbar">
+        <a href="/" className="brand" aria-label="AetherDesk Home">
+          <span className="brandIcon">
+            <Sparkles size={20} />
+          </span>
+          <span>AetherDesk</span>
+        </a>
+
+        <nav className="navLinks">
+          <a href="#tools">Tools</a>
+          <a href="#workspace">Workspace</a>
+          <a href="#features">Fitur</a>
+        </nav>
+
+        <button className="mobileBtn" onClick={() => setMobileMenu(!mobileMenu)}>
+          {mobileMenu ? <X /> : <Menu />}
+        </button>
+      </header>
+
+      {mobileMenu && (
+        <div className="mobileNav">
+          <a href="#tools" onClick={() => setMobileMenu(false)}>Tools</a>
+          <a href="#workspace" onClick={() => setMobileMenu(false)}>Workspace</a>
+          <a href="#features" onClick={() => setMobileMenu(false)}>Fitur</a>
+        </div>
+      )}
+
       <section className="hero">
-        <div>
-          <p className="badge">Cloudflare Pages + GitHub + ENV API</p>
-          <h1>AI Workspace</h1>
-          <p className="subtitle">
-            Beberapa tool AI dalam satu web. API key disimpan aman di Cloudflare ENV, bukan di browser.
+        <div className="heroText">
+          <p className="badge">AI Workspace berbasis Cloudflare + Groq</p>
+          <h1>AetherDesk, pusat kerja AI cepat untuk chat, coding, prompt, dan dokumen.</h1>
+          <p>
+            Gunakan beberapa tool AI dalam satu dashboard ringan, responsif, dan aman.
+            Cocok untuk produktivitas, belajar coding, membuat prompt, dan merangkum teks.
           </p>
+
+          <div className="heroActions">
+            <a href="#workspace" className="primaryBtn">Mulai Pakai AI</a>
+            <a href="#features" className="secondaryBtn">Lihat Fitur</a>
+          </div>
+        </div>
+
+        <div className="heroCard">
+          <div className="miniTop">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <h2>AI Command Center</h2>
+          <p>Fast response dengan Groq API, API key aman di Cloudflare Runtime Secrets.</p>
+          <div className="miniStats">
+            <div>
+              <strong>5+</strong>
+              <small>AI Tools</small>
+            </div>
+            <div>
+              <strong>Global</strong>
+              <small>Cloudflare CDN</small>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="workspace">
+      <section id="features" className="features">
+        <article>
+          <Zap />
+          <h3>Cepat</h3>
+          <p>Backend Worker ringan dan cocok untuk response AI cepat.</p>
+        </article>
+        <article>
+          <ShieldCheck />
+          <h3>Aman</h3>
+          <p>API key disimpan di Cloudflare Secret, bukan di browser.</p>
+        </article>
+        <article>
+          <Sparkles />
+          <h3>Multi Tool</h3>
+          <p>Chat, prompt builder, ringkas teks, coding helper, dan JSON formatter.</p>
+        </article>
+      </section>
+
+      <section id="tools" className="toolsIntro">
+        <p className="badge dark">AetherDesk Tools</p>
+        <h2>Semua kebutuhan AI dalam satu workspace.</h2>
+      </section>
+
+      <section id="workspace" className="workspace">
         <aside className="sidebar">
           {TOOLS.map((item) => {
             const Icon = item.icon;
+
             return (
               <button
                 key={item.id}
                 className={active === item.id ? "tool active" : "tool"}
-                onClick={() => {
-                  setActive(item.id);
-                  setOutput("");
-                }}
+                onClick={() => chooseTool(item.id)}
               >
                 <Icon size={20} />
                 <span>{item.name}</span>
@@ -108,9 +208,21 @@ function App() {
         </aside>
 
         <section className="panel">
-          <div className="panel-header">
-            <h2>{tool.name}</h2>
-            <button className="ghost" onClick={clearAll}>Bersihkan</button>
+          <div className="panelHeader">
+            <div>
+              <p className="panelLabel">Selected Tool</p>
+              <h2>{tool.name}</h2>
+            </div>
+
+            <button
+              className="clearBtn"
+              onClick={() => {
+                setInput("");
+                setOutput("");
+              }}
+            >
+              Bersihkan
+            </button>
           </div>
 
           <textarea
@@ -119,7 +231,7 @@ function App() {
             placeholder={tool.placeholder}
           />
 
-          <button className="run" onClick={runAI} disabled={loading || !input.trim()}>
+          <button className="runBtn" onClick={runAI} disabled={loading || !input.trim()}>
             {loading ? <Loader2 className="spin" size={18} /> : <Bot size={18} />}
             {loading ? "Memproses..." : "Jalankan AI"}
           </button>
@@ -130,6 +242,10 @@ function App() {
           </div>
         </section>
       </section>
+
+      <footer className="footer">
+        <p>© {new Date().getFullYear()} AetherDesk. AI workspace powered by Cloudflare Worker.</p>
+      </footer>
     </main>
   );
 }
