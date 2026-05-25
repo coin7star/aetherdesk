@@ -1030,3 +1030,112 @@ input[type="range"] {
   border-radius: 12px;
   color: #e5e7eb;
 }
+
+.authBox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.loginBtn,
+.logoutBtn {
+  border: 0;
+  border-radius: 14px;
+  padding: 11px 14px;
+  cursor: pointer;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loginBtn {
+  background: #2563eb;
+  color: white;
+}
+
+.logoutBtn {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.loginBtn.big {
+  padding: 14px 18px;
+  border-radius: 16px;
+}
+
+.userMenu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  padding: 8px;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+.userMenu span {
+  max-width: 160px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 800;
+  color: #334155;
+}
+
+.userAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.authLoading {
+  font-weight: 800;
+  color: #64748b;
+}
+
+.loginGate {
+  min-height: 420px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 32%),
+    #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  text-align: center;
+  padding: 32px;
+}
+
+.loginGateIcon {
+  width: 86px;
+  height: 86px;
+  border-radius: 28px;
+  display: grid;
+  place-items: center;
+  color: white;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  margin-bottom: 18px;
+}
+
+.loginGate h3 {
+  margin: 0 0 10px;
+  font-size: 28px;
+  letter-spacing: -0.03em;
+}
+
+.loginGate p {
+  max-width: 520px;
+  color: #64748b;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 900px) {
+  .authBox {
+    display: none;
+  }
+}
