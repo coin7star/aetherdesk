@@ -25,13 +25,14 @@ const TOOLS = [
     id: "chat",
     name: "AI Chat",
     icon: Bot,
-    description: "Chat AI cepat dengan history, rename, hapus chat, dan code block copy."
+    description:
+      "Chat AI cepat dengan history, rename, hapus chat, dan code block copy."
   },
   {
     id: "tempmail",
     name: "TempMail Generator",
     icon: Mail,
-    description: "Buat alamat email sementara random."
+    description: "Buat email sementara asli dan cek inbox."
   },
   {
     id: "calculator",
@@ -123,8 +124,8 @@ function App() {
           </h1>
           <p>
             Satu dashboard ringan untuk kebutuhan produktivitas harian. Mulai
-            dari AI chat, generator email sementara, kalkulator canggih, cek
-            harga crypto, sampai password generator.
+            dari AI chat, email sementara, kalkulator canggih, cek harga crypto,
+            sampai password generator.
           </p>
 
           <div className="heroActions">
@@ -147,7 +148,7 @@ function App() {
           <h2>Smart Tool Hub</h2>
           <p>
             AetherDesk menggabungkan AI dan tools praktis dalam satu tampilan
-            yang responsif untuk HP dan PC.
+            responsif untuk HP dan PC.
           </p>
 
           <div className="miniStats">
@@ -383,7 +384,7 @@ function AIChat() {
         },
         body: JSON.stringify({
           system:
-            "Kamu adalah AetherDesk AI. Jawab dalam bahasa Indonesia yang jelas, rapi, dan mudah dipahami pemula. Jika memberi kode, selalu gunakan markdown code block dengan tiga backtick agar kode tampil di kotak khusus.",
+            "Kamu adalah AetherDesk AI. Jawab dalam bahasa Indonesia yang jelas, rapi, dan mudah dipahami pemula. Jika memberi kode, gunakan markdown code block dengan tiga backtick agar kode tampil di kotak khusus.",
           message: `${chatContext}\n\nUser terbaru: ${userText}`
         })
       });
@@ -611,38 +612,114 @@ function CodeBlock({ language, code }) {
 
 function TempMail() {
   const [email, setEmail] = useState("");
+  const [token, setToken] = useState("");
+  const [deletedIn, setDeletedIn] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [loadingCreate, setLoadingCreate] = useState(false);
+  const [loadingCheck, setLoadingCheck] = useState(false);
 
-  const domains = [
-    "aethermail.dev",
-    "tempmail.local",
-    "quickmail.app",
-    "maildrop.tools"
-  ];
+  async function createEmail() {
+    setLoadingCreate(true);
+    setMessages([]);
 
-  function generateEmail() {
-    const randomName =
-      "user" +
-      Math.random().toString(36).substring(2, 8) +
-      Math.floor(Math.random() * 999);
+    try {
+      const res = await fetch("/api/tempmail/create");
+      const data = await res.json();
 
-    const domain = domains[Math.floor(Math.random() * domains.length)];
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal membuat TempMail.");
+      }
 
-    setEmail(`${randomName}@${domain}`);
+      setEmail(data.email || "");
+      setToken(data.token || "");
+      setDeletedIn(data.deleted_in || "");
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoadingCreate(false);
+    }
+  }
+
+  async function checkInbox() {
+    if (!token) {
+      alert("Buat TempMail dulu.");
+      return;
+    }
+
+    setLoadingCheck(true);
+
+    try {
+      const res = await fetch(
+        "/api/tempmail/check?token=" + encodeURIComponent(token)
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal cek inbox.");
+      }
+
+      setMessages(Array.isArray(data.messages) ? data.messages : []);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoadingCheck(false);
+    }
   }
 
   return (
     <div className="toolBox">
       <p className="hint">
-        Ini generator alamat email sementara. Untuk inbox asli, nanti bisa
-        disambungkan ke API TempMail.
+        TempMail ini memakai API asli. Buat email dulu, lalu klik Cek Inbox
+        untuk melihat pesan masuk.
       </p>
 
-      <button className="runBtn" onClick={generateEmail}>
-        <Mail size={18} />
-        Generate TempMail
-      </button>
+      <div className="actionRow">
+        <button className="runBtn" onClick={createEmail} disabled={loadingCreate}>
+          {loadingCreate ? <Loader2 className="spin" size={18} /> : <Mail size={18} />}
+          {loadingCreate ? "Membuat..." : "Buat TempMail"}
+        </button>
 
-      <CopyBox value={email || "Klik Generate TempMail untuk membuat email."} />
+        <button
+          className="clearBtn"
+          onClick={checkInbox}
+          disabled={loadingCheck || !token}
+        >
+          {loadingCheck ? "Mengecek..." : "Cek Inbox"}
+        </button>
+      </div>
+
+      <CopyBox value={email || "Email sementara akan muncul di sini."} />
+
+      {deletedIn && (
+        <p className="hint">
+          Expired: <strong>{deletedIn}</strong>
+        </p>
+      )}
+
+      <div className="result">
+        <h3>Inbox</h3>
+
+        {messages.length === 0 ? (
+          <pre>Belum ada pesan masuk.</pre>
+        ) : (
+          <div className="mailList">
+            {messages.map((msg, index) => (
+              <div className="mailCard" key={index}>
+                <strong>{msg.subject || msg.title || "Tanpa Subject"}</strong>
+                <p>Dari: {msg.from || msg.sender || "-"}</p>
+
+                <pre>
+                  {msg.text ||
+                    msg.body ||
+                    msg.html ||
+                    JSON.stringify(msg, null, 2)}
+                </pre>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -687,13 +764,28 @@ function AdvancedCalculator() {
       />
 
       <div className="quickGrid">
-        {["7", "8", "9", "/", "4", "5", "6", "*", "1", "2", "3", "-", "0", ".", "%", "+"].map(
-          (v) => (
-            <button key={v} onClick={() => setExpr(expr + v)}>
-              {v}
-            </button>
-          )
-        )}
+        {[
+          "7",
+          "8",
+          "9",
+          "/",
+          "4",
+          "5",
+          "6",
+          "*",
+          "1",
+          "2",
+          "3",
+          "-",
+          "0",
+          ".",
+          "%",
+          "+"
+        ].map((v) => (
+          <button key={v} onClick={() => setExpr(expr + v)}>
+            {v}
+          </button>
+        ))}
       </div>
 
       <div className="actionRow">
