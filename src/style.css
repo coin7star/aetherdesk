@@ -519,3 +519,165 @@ pre {
     padding: 14px;
   }
 }
+
+.toolDesc {
+  margin: -10px 0 18px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.actionRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.toolBox {
+  display: grid;
+  gap: 18px;
+}
+
+.hint {
+  margin: 0;
+  padding: 16px;
+  border-radius: 18px;
+  background: #f1f5f9;
+  color: #475569;
+  line-height: 1.7;
+}
+
+.copyBox {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 22px;
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+.copyBox button {
+  width: fit-content;
+  border: 0;
+  border-radius: 14px;
+  padding: 12px 15px;
+  cursor: pointer;
+  font-weight: 900;
+  background: #2563eb;
+  color: white;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.input,
+select {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 18px;
+  padding: 15px 16px;
+  font: inherit;
+  outline: none;
+  background: white;
+}
+
+.input:focus,
+select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.12);
+}
+
+.quickGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.quickGrid button {
+  border: 0;
+  border-radius: 16px;
+  padding: 16px;
+  background: #f1f5f9;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.quickGrid button:hover {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.selectRow {
+  display: grid;
+  grid-template-columns: 160px auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.cryptoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.cryptoCard {
+  padding: 18px;
+  border-radius: 22px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.cryptoCard div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cryptoCard strong {
+  font-size: 20px;
+}
+
+.cryptoCard span {
+  color: #64748b;
+}
+
+.cryptoCard h3 {
+  margin: 18px 0 8px;
+  font-size: 24px;
+}
+
+.green {
+  color: #16a34a;
+  font-weight: 900;
+}
+
+.red {
+  color: #dc2626;
+  font-weight: 900;
+}
+
+.label {
+  color: #334155;
+  font-weight: 900;
+}
+
+input[type="range"] {
+  width: 100%;
+}
+
+@media (max-width: 700px) {
+  .selectRow {
+    grid-template-columns: 1fr;
+  }
+
+  .cryptoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .actionRow {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
