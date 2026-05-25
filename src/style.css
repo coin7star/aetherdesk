@@ -998,3 +998,35 @@ input[type="range"] {
     max-height: 280px;
   }
 }
+
+.mailList {
+  display: grid;
+  gap: 14px;
+}
+
+.mailCard {
+  padding: 14px;
+  border-radius: 16px;
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+
+.mailCard strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #ffffff;
+}
+
+.mailCard p {
+  margin: 0 0 10px;
+  color: #cbd5e1;
+}
+
+.mailCard pre {
+  max-height: 220px;
+  overflow: auto;
+  background: #020617;
+  padding: 12px;
+  border-radius: 12px;
+  color: #e5e7eb;
+}
