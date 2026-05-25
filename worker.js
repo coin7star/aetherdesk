@@ -6,6 +6,14 @@ export default {
       return handleAI(request, env);
     }
 
+    if (url.pathname === "/api/tempmail/create" && request.method === "GET") {
+      return createTempMail();
+    }
+
+    if (url.pathname === "/api/tempmail/check" && request.method === "GET") {
+      return checkTempMail(url);
+    }
+
     return env.ASSETS.fetch(request);
   }
 };
@@ -46,7 +54,10 @@ async function handleAI(request, env) {
     const data = await res.json();
 
     if (!res.ok) {
-      return json({ error: data.error?.message || "Groq API error." }, res.status);
+      return json(
+        { error: data.error?.message || "Groq API error." },
+        res.status
+      );
     }
 
     return json({
@@ -54,6 +65,72 @@ async function handleAI(request, env) {
     });
   } catch (err) {
     return json({ error: err.message || "Server error." }, 500);
+  }
+}
+
+async function createTempMail() {
+  try {
+    const res = await fetch(
+      "https://bintangapi.full.diskon.cloud/api/tempmail/create/",
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json"
+        }
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok || !data.status) {
+      return json({ error: "Gagal membuat TempMail." }, 500);
+    }
+
+    const mailData = data.result?.data || {};
+
+    return json({
+      email: mailData.email || "",
+      token: mailData.email_token || "",
+      deleted_in: mailData.deleted_in || ""
+    });
+  } catch (err) {
+    return json({ error: err.message || "TempMail create error." }, 500);
+  }
+}
+
+async function checkTempMail(url) {
+  try {
+    const token = url.searchParams.get("token");
+
+    if (!token) {
+      return json({ error: "Token TempMail kosong." }, 400);
+    }
+
+    const apiUrl =
+      "https://bintangapi.full.diskon.cloud/api/tempmail/check/?token=" +
+      encodeURIComponent(token);
+
+    const res = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        Accept: "application/json"
+      }
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.status) {
+      return json({ error: "Gagal cek inbox TempMail." }, 500);
+    }
+
+    const inboxData = data.result?.data || {};
+
+    return json({
+      mailbox: inboxData.mailbox || "",
+      messages: Array.isArray(inboxData.messages) ? inboxData.messages : []
+    });
+  } catch (err) {
+    return json({ error: err.message || "TempMail check error." }, 500);
   }
 }
 
